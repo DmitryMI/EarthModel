@@ -1,20 +1,18 @@
 from PIL import Image, ImageDraw
-from Commmon imoport *
+from Common import *
+from Constants import *
 import math
-
 import sys
 import bpy
-for name, text in bpy.data.texts.items():
-    if name.endswith('.py') and name[:-3] not in sys.modules:
-        sys.modules[name[:-3]] = text.as_module()
+
 
 # Forward
-# x = R(lon - lon0) * cos(lat1)
-# y = R(lat - lat0)
+# x = EARTH_RADIUS(lon - lon0) * cos(lat1)
+# y = EARTH_RADIUS(lat - lat0)
 
 # Reverse
-# lon = x / (R * cos(lat1)) + lon0
-# lat = y / R + lat0
+# lon = x / (EARTH_RADIUS * cos(lat1)) + lon0
+# lat = y / EARTH_RADIUS + lat0
 
 # lat1 - standard parallels (north and south of the equator)
 # where the scale of the projection is true
@@ -24,8 +22,6 @@ for name, text in bpy.data.texts.items():
 
 IMAGE_DIR = "C:\\Users\\DmitryBigPC\\Documents\\GitHub\\EarthModel\\TopographyMap\\"
 
-MODEL_RADIUS = 1000
-R = 6378137
 lat1 = 0
 lat0 = 0
 lon0 = 0
@@ -40,22 +36,19 @@ loaded_images = []
 def project(spherical_point):
     lon = spherical_point[0]
     lat = spherical_point[1]
-    x = R * (lon - lon0) * math.cos(lat1)
-    y = R * (lat - lat0)
+    x = EARTH_RADIUS * (lon - lon0) * math.cos(lat1)
+    y = EARTH_RADIUS * (lat - lat0)
     return (x, y)
 
 def deproject(cartesian_point):
     x = cartesian_point[0]
     y = cartesian_point[1]
-    lon = x / (R * math.cos(lat1)) + lon0
-    lat = y / R + lat0
+    lon = x / (EARTH_RADIUS * math.cos(lat1)) + lon0
+    lat = y / EARTH_RADIUS + lat0
     return (lon, lat)
 
-def deg2rad(sp_p):
-    return (math.radians(sp_p[0]), math.radians(sp_p[1]))
-
 def get_map_resolution(image_width):    
-    meters = 2 * math.pi * R
+    meters = 2 * math.pi * EARTH_RADIUS
     meters_per_pixel = meters / image_width
     return meters_per_pixel
 
@@ -114,9 +107,16 @@ def lerp(a, b, alpha):
     return (b - a) * alpha + a
 
 def get_height(pixel):    
-    return lerp(HEIGHT_MIN, HEIGHT_MAX, pixel / 256)
+    return lerp(HEIGHT_MIN, HEIGHT_MAX, pixel / 255)
     
-def generate_globe(lat_segments = 600, lon_segments = 600):    
+def get_height_from_spherical(sp_p, height_scale):
+    resolution = get_map_resolution(SEGMENT_SIZE*SEGMENTS_NUM_W)
+    pixel = get_pixel(sp_p, resolution)
+    height = get_height(pixel)
+    scaled_height = height_scale * height  * (MODEL_RADIUS) / EARTH_RADIUS
+    return scaled_height
+    
+def generate_globe(lat_segments = 600, lon_segments = 600, height_scale = 20):    
     load_images()
 
     resolution = get_map_resolution(SEGMENT_SIZE*SEGMENTS_NUM_W)
@@ -162,7 +162,7 @@ def generate_globe(lat_segments = 600, lon_segments = 600):
             
             pixel = get_pixel((lon, lat), resolution)
             height = get_height(pixel)
-            scaled_height = 20 * height  * (MODEL_RADIUS) / R
+            scaled_height = height_scale * height  * (MODEL_RADIUS) / EARTH_RADIUS
             cartesian_point = sp2cart_rad((lon, lat), MODEL_RADIUS + scaled_height)
             vertices.append(cartesian_point)
             last = len(vertices) - 1
