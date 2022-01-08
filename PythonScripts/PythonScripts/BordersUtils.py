@@ -83,7 +83,7 @@ def create_planes(name, verts, edges, collection, width):
         
     height = BORDER_PLANE_LENGTH
     # Create plane segment 
-    vertices = [(0, 0, 0), (0, width, 0), (height, width, 0), (height, 0, 0)]
+    vertices = [(-height/2, -width/2, 0), (-height/2, width / 2, 0), (height/2, width / 2, 0), (height/2, -width / 2, 0)]
     edges = [(0, 1), (1, 2), (2, 3), (3, 0)]
     faces = [(0, 1, 2, 3)]
     plane_segment = bpy.data.meshes.new(mesh_name)
@@ -94,15 +94,7 @@ def create_planes(name, verts, edges, collection, width):
     
     #bpy.context.scene.objects.active = plane_segment_object
     segment_length = segment.calc_length()
-    
-    """
-    bpy.ops.object.modifier_add(type='ARRAY')
-    bpy.context.object.modifiers["ARRAY"].count = int(segment_length // height)
-    
-    bpy.ops.object.modifier_add(type='CURVE')
-    bpy.context.object.modifiers["CURVE"].curve_object = cu_obj
-    """
-    
+        
     mod_array = plane_segment_object.modifiers.new(name='array', type='ARRAY')
     mod_array.count = int(segment_length / height)
     
