@@ -110,12 +110,15 @@ def get_height(pixel):
     return lerp(HEIGHT_MIN, HEIGHT_MAX, pixel / 255)
     
 def get_height_from_spherical(sp_p, height_scale):
+    if loaded_images is None or len(loaded_images) == 0:
+        load_images()
+
     resolution = get_map_resolution(SEGMENT_SIZE*SEGMENTS_NUM_W)
     pixel = get_pixel(sp_p, resolution)
     height = get_height(pixel)
     scaled_height = height_scale * height  * (MODEL_RADIUS) / EARTH_RADIUS
     return scaled_height
-    
+        
 def generate_globe(lat_segments = 600, lon_segments = 600, height_scale = 20):    
     load_images()
 

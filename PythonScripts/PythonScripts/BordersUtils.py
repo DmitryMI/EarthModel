@@ -126,7 +126,7 @@ def create_polygon(points, name, collection, height_scale):
         edges.append(edge)
         
     #create_tube(mesh_name, vertices, edges)
-    create_planes(name, vertices, edges, collection, BORDER_PLANE_WIDTH)
+    #create_planes(name, vertices, edges, collection, BORDER_PLANE_WIDTH)
     
     faces = []
     mesh.from_pydata(vertices, edges, faces)
