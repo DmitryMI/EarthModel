@@ -73,6 +73,9 @@ def create_planes(name, verts, edges, collection, width):
         segment.points.add(1)
         segment.points[len(segment.points) - 1].co = v1   
         
+    segment.points.add(1)
+    segment.points[len(segment.points) - 1].co = verts[0] + (0,) 
+        
     if not curve_name in scene.objects:
         try:
             collection = bpy.data.collections["Borders"]
@@ -83,13 +86,16 @@ def create_planes(name, verts, edges, collection, width):
         
     height = BORDER_PLANE_LENGTH
     # Create plane segment 
+    center = get_center(verts)
     vertices = [(-height/2, -width/2, 0), (-height/2, width / 2, 0), (height/2, width / 2, 0), (height/2, -width / 2, 0)]
+    #vertices = list(map(lambda a: vector3_transform(vector3 = a, delta = center), vertices))
     edges = [(0, 1), (1, 2), (2, 3), (3, 0)]
     faces = [(0, 1, 2, 3)]
     plane_segment = bpy.data.meshes.new(mesh_name)
     plane_segment.from_pydata(vertices, edges, faces)
     plane_segment.update()
     plane_segment_object = bpy.data.objects.new(mesh_name + "Object", plane_segment)
+    #plane_segment_object.location = center
     collection.objects.link(plane_segment_object)
     
     #bpy.context.scene.objects.active = plane_segment_object

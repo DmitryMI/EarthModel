@@ -3,6 +3,25 @@ import os
 import bpy
 from importlib import reload, import_module    
 
+def vector3_transform(vector3, delta):
+    return (vector3[0] + delta[0], vector3[1] + delta[1], vector3[2] + delta[2])
+
+def get_center(verts):
+    sumx = 0
+    sumy = 0
+    sumz = 0
+    
+    for vertex in verts:
+        sumx += vertex[0]
+        sumy += vertex[1]
+        sumz += vertex[2]
+    
+    x = sumx / len(verts)
+    y = sumy / len(verts)
+    z = sumz / len(verts)
+    
+    return (x, y, z)
+
 def import_all():    
     modules = []
     #for module_name in os.listdir("C:\\Users\\DmitryBigPC\\Documents\\GitHub\\EarthModel\\PythonScripts\\PythonScripts"):
