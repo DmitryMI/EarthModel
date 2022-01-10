@@ -21,6 +21,13 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="BordersUtils.py" />
+    <Compile Include="Common.py" />
+    <Compile Include="Constants.py" />
+    <Compile Include="HeightMapUtils.py" />
+    <Compile Include="PolygonFiller.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="PythonScripts.py" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
