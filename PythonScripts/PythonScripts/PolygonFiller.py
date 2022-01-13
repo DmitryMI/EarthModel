@@ -227,6 +227,7 @@ def create_grid(sp_points):
                     face = (len(vertices) - 1, prev_vertex, row_segments[row_end_index], row_segments[row_end_index + 1])
                     faces.append(face)
 
+        print(f"Progress: {(lat - lat_min) / (lat_max - lat_min) * 100}%")
         lat += GRID_LAT_STEP
         
         row_segments = next_row_segments
