@@ -83,12 +83,18 @@ def get_intersected_edges(points_indexed, points, lat):
     # Sort by intersection_lon
     sorted_result = sorted(result, key=lambda edge: edge[2])
     return sorted_result
+    
+def create_vertex(sp_rad, vertices):
+    #print(f"create_vertex({sp_rad})")
+    height = HeightMapUtils.get_height_from_spherical(sp_rad, HEIGHT_SCALE)            
+    #print(f"Height({sp_rad}, {height_scale}):", height)
+    vertex = sp2cart_rad(sp_rad, MODEL_RADIUS + height)
+    vertices.append(vertex)
 
-def create_grid(sp_points, lon_step, lat_step, ops):
-
-    create_vertex = ops[0]
-    create_edge = ops[1]
-    create_face = ops[2]
+def create_grid(sp_points, lon_step, lat_step):
+    vertices = []
+    edges = []
+    faces = []
 
     points_indexed = []
     points = []
@@ -129,13 +135,15 @@ def create_grid(sp_points, lon_step, lat_step, ops):
             #print(f"lon0: {lon0}, lon1: {lon1}")
             lon = lon0
             while lon < lon1:
-                create_vertex((lon, lat))
+                create_vertex((lon, lat), vertices)
                 lon += lon_step
 
         lat += lat_step
+        
+    return (vertices, edges, faces)
 
     
-def generate_country_elevation(name, points, parts, collection, height_scale):  
+def generate_country_elevation(name, points, parts, collection):  
 
     for part_index in range(0, len(parts)):
         part_vertexes = []
@@ -153,19 +161,8 @@ def generate_country_elevation(name, points, parts, collection, height_scale):
         
         mesh_name = name + "ElevationMesh" + str(part_index)
         mesh = bpy.data.meshes.new(mesh_name)
-        vertices = []
-        edges = []
-        faces = []
 
-        def create_vertex(sp_rad):
-            #print(f"create_vertex({sp_rad})")
-            height = HeightMapUtils.get_height_from_spherical(sp_rad, height_scale)            
-            #print(f"Height({sp_rad}, {height_scale}):", height)
-            vertex = sp2cart_rad(sp_rad, MODEL_RADIUS + height)
-            vertices.append(vertex)
-
-        ops = [create_vertex, None, None]
-        create_grid(part_vertexes, GRID_LON_STEP, GRID_LAT_STEP, ops)
+        vertices, edges, faces = create_grid(part_vertexes, GRID_LON_STEP, GRID_LAT_STEP)
 
         mesh.from_pydata(vertices, edges, faces)
         mesh.update()
@@ -176,7 +173,7 @@ def generate_country_elevation(name, points, parts, collection, height_scale):
 
         #break
 
-def generate_countries_elevation(height_scale = 20, white_list = None):    
+def generate_countries_elevation(white_list = None):    
     shape = shapefile.Reader("C:\\Users\\DmitryBigPC\\Documents\\GitHub\\EarthModel\\ne_10m_admin_0_countries\\ne_10m_admin_0_countries.shp")
 
     records = shape.shapeRecords();
@@ -199,5 +196,5 @@ def generate_countries_elevation(height_scale = 20, white_list = None):
         #print(parts)
         points = shape.points;
         print(name_en + ": " + str(len(points)) + " points, ", len(parts), " parts");
-        generate_country_elevation(name_en, points, parts, collection, height_scale)
+        generate_country_elevation(name_en, points, parts, collection)
         
