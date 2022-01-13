@@ -206,6 +206,12 @@ def create_grid(sp_points):
                 if row_segments[row_index] is not None:
                     edge = (len(vertices) - 1, row_segments[row_index])
                     edges.append(edge)
+                if (prev_vertex is not None and
+                    row_segments[row_index] is not None and
+                    row_segments[row_index - 1] is not None):
+                    
+                    face = (len(vertices) - 1, prev_vertex, row_segments[row_index - 1], row_segments[row_index])
+                    faces.append(face)
                     
                 prev_vertex = len(vertices) - 1
             
@@ -216,7 +222,10 @@ def create_grid(sp_points):
                 next_row_segments[row_end_index + 1] = len(vertices) - 1
                 if row_segments[row_end_index + 1] is not None:
                     edge = (len(vertices) - 1, row_segments[row_end_index + 1])
-                    #edges.append(edge)
+                    edges.append(edge)
+                if (row_segments[row_end_index + 1] is not None) and (row_segments[row_end_index] is not None):
+                    face = (len(vertices) - 1, prev_vertex, row_segments[row_end_index], row_segments[row_end_index + 1])
+                    faces.append(face)
 
         lat += GRID_LAT_STEP
         
@@ -243,17 +252,32 @@ def generate_country_elevation(name, points, parts, collection):
         
         mesh_name = name + "ElevationMesh" + str(part_index)
         mesh = bpy.data.meshes.new(mesh_name)
-
-        vertices, edges, faces = create_grid(part_vertexes)
-
-        mesh.from_pydata(vertices, edges, faces)
-        mesh.update()
         
         object_name = name + "Elevation" + str(part_index)
-        object = bpy.data.objects.new(object_name, mesh)    
-        collection.objects.link(object)    
+        
+        obj = None
+        
+        try:
+            obj = bpy.data.objects[object_name]
+            if obj != None:
+                #print(f"{name}[{str(part_index)}] already generated")
+                pass
+                
+        except Exception:
+            pass
+            #print(f"{name} not generated")
 
-        #break
+        if obj is None:
+            vertices, edges, faces = create_grid(part_vertexes)
+
+            mesh.from_pydata(vertices, edges, faces)            
+            mesh.update()            
+            
+            obj = bpy.data.objects.new(object_name, mesh) 
+            for face in obj.data.polygons:
+                face.use_smooth = True            
+            collection.objects.link(obj)           
+
 
 def generate_countries_elevation(white_list = None):    
     shape = shapefile.Reader("C:\\Users\\DmitryBigPC\\Documents\\GitHub\\EarthModel\\ne_10m_admin_0_countries\\ne_10m_admin_0_countries.shp")
