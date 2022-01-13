@@ -90,55 +90,127 @@ def create_vertex(sp_rad, vertices):
     #print(f"Height({sp_rad}, {height_scale}):", height)
     vertex = sp2cart_rad(sp_rad, MODEL_RADIUS + height)
     vertices.append(vertex)
+    
 
-def create_grid(sp_points, lon_step, lat_step):
+
+def normalize_angle_positive(angle):
+    """
+    Wrap the angle between 0 and 2 * pi.
+
+    Args:
+        angle (float): angle to wrap.
+
+    Returns:
+         The wrapped angle.
+
+    """
+    pi_2 = 2. * math.pi
+
+    return fmod(fmod(angle, pi_2) + pi_2, pi_2) 
+
+
+
+def normalize_angle(angle):
+    """
+    Wrap the angle between -pi and pi.
+
+    Args:
+        angle (float): angle to wrap.
+
+    Returns:
+         The wrapped angle.
+
+    """
+    a = normalize_angle_positive(angle)
+    if a > np.pi:
+        a -= 2. * math.pi
+
+    return a 
+
+def angle_diff(x, y):
+    return math.atan2(math.sin(x-y), math.cos(x-y))
+
+def create_grid(sp_points):
     vertices = []
     edges = []
     faces = []
 
     points_indexed = []
-    points = []
+    points = []    
+    
+    first_point = deg2rad(sp_points[0])
+    lon_base = first_point[0]
+    lon_min = 0
+    lon_max = 0
     for i in range(0, len(sp_points)):
         point = deg2rad(sp_points[i])
-        point_indexed = (point, i)
+        point_translated = (angle_diff(point[0], lon_base), point[1])
+        if point_translated[0] > lon_max:
+            lon_max = point_translated[0]
+        if point_translated[0] < lon_min:
+            lon_min = point_translated[0]
+        point_indexed = (point_translated, i)
         points_indexed.append(point_indexed)
-        points.append(point)
-
+        points.append(point_translated)
+        
+    lon_size = lon_max - lon_min
+    row_segments_num = int(lon_size / GRID_LON_STEP) + 2
+    print(f"lon_min: {lon_min}, lon_max: {lon_max}, lon_size: {lon_size}, lon_segments: {row_segments_num}") 
+    
+    row_segments = [None] * row_segments_num
+    
     # Sort by LAT
     points_indexed = sorted(points_indexed, key=lambda pi: pi[0][1])
-    #print(points_indexed)
     lat_min = points_indexed[0][0][1]
     length = len(points_indexed)
     lat_max = points_indexed[length - 1][0][1]
-    #print(f"lat_min: {lat_min}, lat_max: {lat_max}, lat_step: {lat_step}")
     lat = lat_min
+    
     while lat < lat_max:
-        #print("LOOP LAT", lat)
         intersected_edges = get_intersected_edges(points_indexed, points, lat)
-        #print("lat:", lat, "len(intersected_edges):", len(intersected_edges))
+
         if len(intersected_edges) == 0:
-            #print("lat:", lat, "len(intersected_edges) is 0, skipping this Lat")
-            lat += lat_step
+            lat += GRID_LAT_STEP
             continue
 
         if len(intersected_edges) % 2 != 0:
-            #print("lat:", lat, "len(intersected_edges) % 2 is not 0, skipping this Lat?!")
-            lat += lat_step
+            lat += GRID_LAT_STEP
             continue
-        
-        for edge_index in range(0, len(intersected_edges), 2):            
+            
+        next_row_segments = [None] * row_segments_num
+                
+        for edge_index in range(0, len(intersected_edges), 2):
             starting_edge = intersected_edges[edge_index]
             finishing_edge = intersected_edges[edge_index + 1]
-            #print(f"starting_edge: {starting_edge}, finishing_edge: {finishing_edge}")
             lon0 = starting_edge[2]
             lon1 = finishing_edge[2]
-            #print(f"lon0: {lon0}, lon1: {lon1}")
-            lon = lon0
-            while lon < lon1:
-                create_vertex((lon, lat), vertices)
-                lon += lon_step
+            row_start_index = int((lon0 - lon_min) / GRID_LON_STEP)
+            row_end_index = int((lon1 - lon_min) / GRID_LON_STEP)
+            #while lon < lon1:
+            prev_vertex = None
+            for row_index in range(row_start_index, row_end_index + 2):
+                lon_snapped = row_index * GRID_LON_STEP + lon_min
+                if lon_snapped < lon0:
+                    lon_snapped = lon0
+                elif lon_snapped > lon1:
+                    lon_snapped = lon1
+                
+                #print(f"len(row_segments): {len(row_segments)}, row_index: {row_index}")
+                next_row_segments[row_index] = len(vertices)
+                    
+                create_vertex((lon_snapped + lon_base, lat), vertices)
+                if prev_vertex is not None:                    
+                    edge = (len(vertices) - 1, prev_vertex)
+                    edges.append(edge)
+                if row_segments[row_index] is not None:
+                    edge = (len(vertices) - 1, row_segments[row_index])
+                    edges.append(edge)
+                    
+                prev_vertex = len(vertices) - 1
 
-        lat += lat_step
+        lat += GRID_LAT_STEP
+        
+        row_segments = next_row_segments
         
     return (vertices, edges, faces)
 
@@ -162,7 +234,7 @@ def generate_country_elevation(name, points, parts, collection):
         mesh_name = name + "ElevationMesh" + str(part_index)
         mesh = bpy.data.meshes.new(mesh_name)
 
-        vertices, edges, faces = create_grid(part_vertexes, GRID_LON_STEP, GRID_LAT_STEP)
+        vertices, edges, faces = create_grid(part_vertexes)
 
         mesh.from_pydata(vertices, edges, faces)
         mesh.update()
@@ -180,9 +252,9 @@ def generate_countries_elevation(white_list = None):
     print("Total number of records: ", len(records));
     
     try:
-        collection = bpy.data.collections["Borders"]
+        collection = bpy.data.collections["ElevationGrids"]
     except:   
-        collection = bpy.data.collections.new('Borders')
+        collection = bpy.data.collections.new('ElevationGrids')
         bpy.context.scene.collection.children.link(collection) 
 
     for feature in shape.shapeRecords():
