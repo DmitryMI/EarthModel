@@ -164,7 +164,9 @@ def clear_countries():
         print("Nothing to clear")        
         
 def generate_land_borders(height_scale = 20, white_list = None):
-    shape = shapefile.Reader(get_path(LAND_SHP))
+    path_shp = get_path(LAND_SHP)
+    print(path_shp)
+    shape = shapefile.Reader(path_shp)
 
     records = shape.shapeRecords();
     print("Total number of records: ", len(records));

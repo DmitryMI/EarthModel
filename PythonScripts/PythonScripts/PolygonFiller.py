@@ -287,7 +287,7 @@ def print_shapefile_info():
         print(feature.record)
 
 def generate_countries_elevation(white_list = None):    
-    shape = shapefile.Reader(get_path(COASTLINES_SHP))
+    shape = shapefile.Reader(get_path(LAND_SHP))
 
     records = shape.shapeRecords();
     print("Total number of records: ", len(records));
