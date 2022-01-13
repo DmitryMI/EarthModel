@@ -278,9 +278,16 @@ def generate_country_elevation(name, points, parts, collection):
                 face.use_smooth = True            
             collection.objects.link(obj)           
 
+def print_shapefile_info():
+    shape = shapefile.Reader(get_path(LAND_SHP))
+
+    records = shape.shapeRecords();
+    print("Total number of records: ", len(records));
+    for feature in shape.shapeRecords():
+        print(feature.record)
 
 def generate_countries_elevation(white_list = None):    
-    shape = shapefile.Reader("C:\\Users\\DmitryBigPC\\Documents\\GitHub\\EarthModel\\ne_10m_admin_0_countries\\ne_10m_admin_0_countries.shp")
+    shape = shapefile.Reader(get_path(COASTLINES_SHP))
 
     records = shape.shapeRecords();
     print("Total number of records: ", len(records));
@@ -291,9 +298,12 @@ def generate_countries_elevation(white_list = None):
         collection = bpy.data.collections.new('ElevationGrids')
         bpy.context.scene.collection.children.link(collection) 
 
+    counter = 0
     for feature in shape.shapeRecords():
-        name_en = feature.record['NAME_EN'];
-        name_en = re.sub('[^A-Za-z0-9]+', '', name_en)
+        #name_en = feature.record['NAME_EN'];
+        #name_en = re.sub('[^A-Za-z0-9]+', '', name_en)
+        name_en = "Land" + str(counter)
+        counter += 1
         if not white_list is None:
             if not name_en in white_list:
                 continue

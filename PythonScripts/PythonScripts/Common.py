@@ -3,6 +3,9 @@ import os
 import bpy
 from importlib import reload, import_module    
 
+def get_path(relative_path):
+    return os.path.join(bpy.path.abspath("//"), relative_path)
+
 def vector3_transform(vector3, delta):
     return (vector3[0] + delta[0], vector3[1] + delta[1], vector3[2] + delta[2])
 

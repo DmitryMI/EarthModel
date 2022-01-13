@@ -163,9 +163,36 @@ def clear_countries():
     except:   
         print("Nothing to clear")        
         
+def generate_land_borders(height_scale = 20, white_list = None):
+    shape = shapefile.Reader(get_path(LAND_SHP))
+
+    records = shape.shapeRecords();
+    print("Total number of records: ", len(records));
+    
+    try:
+        collection = bpy.data.collections["Borders"]
+    except:   
+        collection = bpy.data.collections.new('Borders')
+        bpy.context.scene.collection.children.link(collection) 
+
+    counter = 0
+    
+    for feature in shape.shapeRecords():
+        name_en = "LandBorder" + str(counter)
+        counter += 1
+        if not white_list is None:
+            if not name_en in white_list:
+                continue
+        shape = feature.shape;
+        parts = shape.parts;
+        #print(parts)
+        points = shape.points;
+        print(name_en + ": " + str(len(points)) + " points, ", len(parts), " parts");
+        
+        create_country_borders(name_en, points, parts, collection, height_scale)
         
 def generate_countries(height_scale = 20, white_list = None):    
-    shape = shapefile.Reader("C:\\Users\\DmitryBigPC\\Documents\\GitHub\\EarthModel\\ne_10m_admin_0_countries\\ne_10m_admin_0_countries.shp")
+    shape = shapefile.Reader(get_path(COUNTRIES_SHP))
 
     records = shape.shapeRecords();
     print("Total number of records: ", len(records));
