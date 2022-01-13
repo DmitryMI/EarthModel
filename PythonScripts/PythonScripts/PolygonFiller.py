@@ -155,7 +155,7 @@ def create_grid(sp_points):
         
     lon_size = lon_max - lon_min
     row_segments_num = int(lon_size / GRID_LON_STEP) + 2
-    print(f"lon_min: {lon_min}, lon_max: {lon_max}, lon_size: {lon_size}, lon_segments: {row_segments_num}") 
+    #print(f"lon_min: {lon_min}, lon_max: {lon_max}, lon_size: {lon_size}, lon_segments: {row_segments_num}") 
     
     row_segments = [None] * row_segments_num
     
@@ -186,9 +186,10 @@ def create_grid(sp_points):
             lon1 = finishing_edge[2]
             row_start_index = int((lon0 - lon_min) / GRID_LON_STEP)
             row_end_index = int((lon1 - lon_min) / GRID_LON_STEP)
+            
             #while lon < lon1:
             prev_vertex = None
-            for row_index in range(row_start_index, row_end_index + 2):
+            for row_index in range(row_start_index, row_end_index + 1):
                 lon_snapped = row_index * GRID_LON_STEP + lon_min
                 if lon_snapped < lon0:
                     lon_snapped = lon0
@@ -207,6 +208,15 @@ def create_grid(sp_points):
                     edges.append(edge)
                     
                 prev_vertex = len(vertices) - 1
+            
+            if prev_vertex is not None:
+                create_vertex((lon1 + lon_base, lat), vertices) 
+                edge = (len(vertices) - 1, prev_vertex)
+                edges.append(edge)
+                next_row_segments[row_end_index + 1] = len(vertices) - 1
+                if row_segments[row_end_index + 1] is not None:
+                    edge = (len(vertices) - 1, row_segments[row_end_index + 1])
+                    #edges.append(edge)
 
         lat += GRID_LAT_STEP
         
