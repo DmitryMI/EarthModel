@@ -1,6 +1,7 @@
 import math
 import os
 import bpy
+from Constants import *
 from importlib import reload, import_module    
 
 def get_path(relative_path):
@@ -9,7 +10,7 @@ def get_path(relative_path):
 def vector3_transform(vector3, delta):
     return (vector3[0] + delta[0], vector3[1] + delta[1], vector3[2] + delta[2])
 
-def project(spherical_point):
+def project(spherical_point):    
     lon = spherical_point[0]
     lat = spherical_point[1]
     x = EARTH_RADIUS * (lon - lon0) * math.cos(lat1)

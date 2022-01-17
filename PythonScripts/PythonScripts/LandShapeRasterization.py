@@ -94,10 +94,21 @@ class LandShapeRasterizer():
     def show(self):
         self.image.show()
 
-    def save(self):
-        self.image.save("land.png")
+    def save(self, cols, rows):
+        #self.image.save("land.png")
+        segment_size = self.image.width / cols
+        for x in range(0, cols):
+            for y in range(0, rows):
+                area = (segment_size * x, segment_size * y, segment_size * (x + 1), segment_size * (y + 1))
+                cropped_img = self.image.crop(area)
+                cropped_img.save(f"C:\\Users\\DmitryBigPC\\Documents\\GitHub\\EarthModel\\TopographyMap\\land{x}{y}.png")
+
         pass
 
-rasterizer = LandShapeRasterizer(21600)
-rasterizer.rasterize_shapefile()
-rasterizer.save()
+def create_png():
+    rasterizer = LandShapeRasterizer(21600)
+    rasterizer.rasterize_shapefile()
+    rasterizer.save(4, 2)
+
+if __name__ == "__main__":
+    create_png()

@@ -20,43 +20,86 @@ import bpy
 # lat0 - central parallel of the map
 # lon0 - central meridian of the map
 
+class ImageMap():
+
+    HEIGHT_MIN = 0
+    HEIGHT_MAX = 6400
+
+    @staticmethod
+    def lerp(a, b, alpha):
+        return (b - a) * alpha + a
+
+    @staticmethod
+    def get_height(pixel):    
+        return lerp(HEIGHT_MIN, HEIGHT_MAX, pixel / 255)
+
+    def get_map_resolution(self):    
+        meters = 2 * math.pi * EARTH_RADIUS
+        meters_per_pixel = meters / self.image_width
+        return meters_per_pixel
+
+
+    def get_pixel_coordinate(self, spherical_point):
+        (x, y) = project(spherical_point)
+        x_pixel = x / self.image_resolution
+        y_pixel = y / self.image_resolution
+        return (x_pixel, y_pixel)
+
+
+    def get_image_and_pixel_coordinate(self, pixel_point):
+        width = (self.segment_size * self.segments_num_w)
+        height = (self.segment_size * self.segments_num_h)
+        x = pixel_point[0] + width / 2
+        y = pixel_point[1] + height / 2
+        x_index = int(x // self.segment_size)
+        y_index = int(y // self.segment_size)
+        x_trans = x - x_index * self.segment_size
+        y_trans = self.segment_size - (y - y_index * self.segment_size)
+        return (x_index, self.segments_num_h - y_index - 1, x_trans, y_trans)
+
+    def get_height_from_spherical(sp_p, height_scale):        
+        pixel = self.get_pixel(sp_p, resolution)
+        height = self.get_height(pixel)
+        scaled_height = height_scale * height  * (MODEL_RADIUS) / EARTH_RADIUS
+        return scaled_height
+
+
+    def get_pixel(self, sp_p):
+        pixel_coordinate = self.get_pixel_coordinate(sp_p)
+        (i, j, x, y) = self.get_image_and_pixel_coordinate(pixel_coordinate)
+
+        if len(self.loaded_images) <= i:
+            return 0
+        if len(self.loaded_images[i]) <= j:
+            return 0
+    
+        im = self.loaded_images[i][j]
+        if im.size[0] <= x or im.size[1] <= y or x < 0 or y < 0:
+            return 0
+        pixel = im.getpixel((x, y))
+        return pixel
+
+        
+    def load_images(self, cols, rows, get_image_name):
+        for x in range(0, cols):
+            self.loaded_images.append([])
+            for y in range(0, rows):
+                image_name = get_image_name(x, y)
+                print("Image ", image_name, f"loaded into {x}, {y}\n")
+                self.loaded_images[x].append(Image.open(image_name))
+
+    def __init__(self, cols, rows, path_constructor):
+        self.loaded_images = []
+        self.load_images(cols, rows, path_constructor)
+        self.segment_size = self.loaded_images[0][0].width
+        self.image_width = self.segment_size * cols
+        self.image_resolution = self.get_map_resolution()
+        self.segments_num_w = cols
+        self.segments_num_h = rows        
+
+
+
 IMAGE_DIR = "C:\\Users\\DmitryBigPC\\Documents\\GitHub\\EarthModel\\TopographyMap\\"
-
-lat1 = 0
-lat0 = 0
-lon0 = 0
-HEIGHT_MIN = 0
-HEIGHT_MAX = 6400
-SEGMENT_SIZE = 10800
-SEGMENTS_NUM_W = 4
-SEGMENTS_NUM_H = 2
-
-loaded_images = []
-
-def get_map_resolution(image_width):    
-    meters = 2 * math.pi * EARTH_RADIUS
-    meters_per_pixel = meters / image_width
-    return meters_per_pixel
-
-def get_pixel_coordinate(spherical_point, image_resolution):
-    (x, y) = project(spherical_point)
-    #print("Projected: ", x, y)
-    x_pixel = x / image_resolution
-    y_pixel = y / image_resolution
-    #print("On image: ", x_pixel, y_pixel)
-    return (x_pixel, y_pixel)
-
-def get_image_and_pixel_coordinate(pixel_point):
-    width = (SEGMENT_SIZE * SEGMENTS_NUM_W)
-    height = (SEGMENT_SIZE * SEGMENTS_NUM_H)
-    x = pixel_point[0] + width / 2
-    y = pixel_point[1] + height / 2
-    x_index = int(x // SEGMENT_SIZE)
-    y_index = int(y // SEGMENT_SIZE)
-    x_trans = x - x_index * SEGMENT_SIZE
-    y_trans = SEGMENT_SIZE - (y - y_index * SEGMENT_SIZE)
-
-    return (x_index, SEGMENTS_NUM_H - y_index - 1, x_trans, y_trans)
 
 def get_image_name(x_index, y_index):
     letter = ['A', 'B', 'C', 'D'][x_index]
@@ -64,52 +107,14 @@ def get_image_name(x_index, y_index):
     path = IMAGE_DIR + f"gebco_08_rev_elev_{letter}{digit}_grey_geo.tif"
     return path
 
-def load_images():
-    for x in range(0, 4):
-        loaded_images.append([])
-        for y in range(0, 2):
-            image_name = get_image_name(x, y)
-            print("Image ", image_name, f"loaded into {x}, {y}\n")
-            loaded_images[x].append(Image.open(image_name))
-
-def get_pixel(sp_p, image_resolution):
-    pixel_coordinate = get_pixel_coordinate(sp_p, image_resolution)
-    (i, j, x, y) = get_image_and_pixel_coordinate(pixel_coordinate)
-    #print(i, j, x, y)
-    
-    if len(loaded_images) <= i:
-        return 0
-    if len(loaded_images[i]) <= j:
-        return 0
-    
-    im = loaded_images[i][j]
-    if im.size[0] <= x or im.size[1] <= y or x < 0 or y < 0:
-        return 0
-    pixel = im.getpixel((x, y))
-    return pixel
-
-
-def lerp(a, b, alpha):
-    return (b - a) * alpha + a
-
-def get_height(pixel):    
-    return lerp(HEIGHT_MIN, HEIGHT_MAX, pixel / 255)
-    
-def get_height_from_spherical(sp_p, height_scale):
-    if loaded_images is None or len(loaded_images) == 0:
-        load_images()
-
-    resolution = get_map_resolution(SEGMENT_SIZE*SEGMENTS_NUM_W)
-    pixel = get_pixel(sp_p, resolution)
-    height = get_height(pixel)
-    scaled_height = height_scale * height  * (MODEL_RADIUS) / EARTH_RADIUS
-    return scaled_height
+def get_land_raster(x_index, y_index):
+    path = IMAGE_DIR + f"land{x_index}{y_index}.png"
+    return path
         
 def generate_globe(lat_segments = 600, lon_segments = 600, height_scale = 20):    
-    load_images()
 
-    resolution = get_map_resolution(SEGMENT_SIZE*SEGMENTS_NUM_W)
-    print("Map resolution: ", resolution)
+    elevationMap = ImageMap(4, 2, get_image_name)    
+    landRaster = ImageMap(4, 2, get_land_raster)
 
     try:
         collection = bpy.data.collections["Elevation"]
@@ -123,7 +128,6 @@ def generate_globe(lat_segments = 600, lon_segments = 600, height_scale = 20):
     vertices = []
     edges = []
     faces = []
-
     
     lat = -math.pi / 2
     lon = -math.pi
@@ -149,8 +153,13 @@ def generate_globe(lat_segments = 600, lon_segments = 600, height_scale = 20):
                     faces.append(face)
                 continue
             
-            pixel = get_pixel((lon, lat), resolution)
-            height = get_height(pixel)
+            pixel = elevationMap.get_pixel((lon, lat))
+            height = elevationMap.get_height(pixel)
+
+            land_pixel = landRaster.get_pixel((lon, lat))
+            if land_pixel == 0:
+                height = -1000
+
             scaled_height = height_scale * height  * (MODEL_RADIUS) / EARTH_RADIUS
             cartesian_point = sp2cart_rad((lon, lat), MODEL_RADIUS + scaled_height)
             vertices.append(cartesian_point)
