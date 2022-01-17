@@ -4,13 +4,14 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>272da627-0354-442e-bbb0-badd82c8dbc3</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>PythonScripts.py</StartupFile>
+    <StartupFile>LandShapeRasterization.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>PythonScripts</Name>
     <RootNamespace>PythonScripts</RootNamespace>
+    <InterpreterId>Global|PythonCore|3.7</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -25,10 +26,14 @@
     <Compile Include="Common.py" />
     <Compile Include="Constants.py" />
     <Compile Include="HeightMapUtils.py" />
+    <Compile Include="LandShapeRasterization.py" />
     <Compile Include="PolygonFiller.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="PythonScripts.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|PythonCore|3.7" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

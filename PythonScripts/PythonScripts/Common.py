@@ -9,6 +9,20 @@ def get_path(relative_path):
 def vector3_transform(vector3, delta):
     return (vector3[0] + delta[0], vector3[1] + delta[1], vector3[2] + delta[2])
 
+def project(spherical_point):
+    lon = spherical_point[0]
+    lat = spherical_point[1]
+    x = EARTH_RADIUS * (lon - lon0) * math.cos(lat1)
+    y = EARTH_RADIUS * (lat - lat0)
+    return (x, y)
+
+def deproject(cartesian_point):
+    x = cartesian_point[0]
+    y = cartesian_point[1]
+    lon = x / (EARTH_RADIUS * math.cos(lat1)) + lon0
+    lat = y / EARTH_RADIUS + lat0
+    return (lon, lat)
+
 def get_center(verts):
     sumx = 0
     sumy = 0

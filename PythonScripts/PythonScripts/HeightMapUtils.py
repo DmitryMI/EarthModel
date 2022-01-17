@@ -33,20 +33,6 @@ SEGMENTS_NUM_H = 2
 
 loaded_images = []
 
-def project(spherical_point):
-    lon = spherical_point[0]
-    lat = spherical_point[1]
-    x = EARTH_RADIUS * (lon - lon0) * math.cos(lat1)
-    y = EARTH_RADIUS * (lat - lat0)
-    return (x, y)
-
-def deproject(cartesian_point):
-    x = cartesian_point[0]
-    y = cartesian_point[1]
-    lon = x / (EARTH_RADIUS * math.cos(lat1)) + lon0
-    lat = y / EARTH_RADIUS + lat0
-    return (lon, lat)
-
 def get_map_resolution(image_width):    
     meters = 2 * math.pi * EARTH_RADIUS
     meters_per_pixel = meters / image_width
